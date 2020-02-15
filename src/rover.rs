@@ -1,30 +1,4 @@
-#[derive(Debug, PartialEq)]
-enum Orientation {
-    North,
-    East,
-    South,
-    West,
-}
-
-impl Orientation {
-    fn turn_left(&self) -> Orientation {
-        match self {
-            Orientation::North => Orientation::West,
-            Orientation::West => Orientation::South,
-            Orientation::South => Orientation::East,
-            Orientation::East => Orientation::North,
-        }
-    }
-
-    fn turn_right(&self) -> Orientation {
-        match self {
-            Orientation::North => Orientation::East,
-            Orientation::West => Orientation::North,
-            Orientation::South => Orientation::West,
-            Orientation::East => Orientation::South,
-        }
-    }
-}
+use super::orientation::Orientation;
 
 #[derive(Debug, PartialEq)]
 enum Instruction {
