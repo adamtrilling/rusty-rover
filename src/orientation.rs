@@ -1,3 +1,8 @@
+use std::str::FromStr;
+
+#[derive(Debug)]
+pub struct ParseOrientationError {}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum Orientation {
     North,
@@ -26,9 +31,32 @@ impl Orientation {
     }
 }
 
+impl FromStr for Orientation {
+    type Err = ParseOrientationError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "N" => Ok(Orientation::North),
+            "S" => Ok(Orientation::South),
+            "E" => Ok(Orientation::East),
+            "W" => Ok(Orientation::West),
+            _ => Err(ParseOrientationError {}),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses() {
+        assert_eq!("N".parse::<Orientation>().unwrap(), Orientation::North);
+        assert_eq!("S".parse::<Orientation>().unwrap(), Orientation::South);
+        assert_eq!("E".parse::<Orientation>().unwrap(), Orientation::East);
+        assert_eq!("W".parse::<Orientation>().unwrap(), Orientation::West);
+        assert!("q".parse::<Orientation>().is_err());
+    }
 
     #[test]
     fn north_turn_left() {

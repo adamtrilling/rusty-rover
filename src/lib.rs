@@ -3,7 +3,8 @@ mod orientation;
 
 use rover::Rover;
 
-// struct ParseInputError {}
+#[derive(Debug, PartialEq)]
+pub struct ParseInputError {}
 
 #[derive(Debug, PartialEq)]
 struct Input {
