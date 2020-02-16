@@ -50,7 +50,7 @@ impl fmt::Display for Plateau {
     }
 }
 
-fn execute(input: &str) -> String {
+pub fn execute(input: &str) -> String {
     let plateau = input.parse::<Plateau>().unwrap();
     plateau
         .rovers
