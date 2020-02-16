@@ -3,6 +3,7 @@ use super::orientation::Orientation;
 
 use std::convert::TryFrom;
 use std::str::FromStr;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct ParseRoverError {}
@@ -81,6 +82,12 @@ impl FromStr for Rover {
             orientation: position[2].parse::<Orientation>().unwrap(),
             instructions: instructions,
         })
+    }
+}
+
+impl fmt::Display for Rover {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} {}", self.x, self.y, self.orientation)
     }
 }
 

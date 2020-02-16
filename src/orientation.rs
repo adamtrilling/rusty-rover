@@ -1,4 +1,5 @@
 use std::str::FromStr;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct ParseOrientationError {}
@@ -42,6 +43,18 @@ impl FromStr for Orientation {
             "W" => Ok(Orientation::West),
             _ => Err(ParseOrientationError {}),
         }
+    }
+}
+
+impl fmt::Display for Orientation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let output = match self {
+            Orientation::North => "N",
+            Orientation::West => "W",
+            Orientation::South => "S",
+            Orientation::East => "E",
+        };
+        f.write_str(output)
     }
 }
 
