@@ -1,11 +1,11 @@
+use super::instruction::Instruction;
 use super::orientation::Orientation;
 
-#[derive(Clone, Debug, PartialEq)]
-enum Instruction {
-    Move,
-    Left,
-    Right,
-}
+use std::convert::TryFrom;
+use std::str::FromStr;
+
+#[derive(Debug)]
+pub struct ParseRoverError {}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rover {
@@ -57,6 +57,30 @@ impl Rover {
             y: new_y,
             ..self.clone()
         }
+    }
+}
+
+impl FromStr for Rover {
+    type Err = ParseRoverError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let lines: Vec<&str> = s.split('\n').collect();
+
+        if lines.len() != 2 {
+            return Err(ParseRoverError {});
+        }
+
+        let position: Vec<&str> = lines[0].split(' ').collect();
+        let instructions = lines[1]
+            .chars()
+            .map(|i| Instruction::try_from(i).unwrap())
+            .collect();
+        Ok(Rover {
+            x: position[0].parse::<u32>().unwrap(),
+            y: position[1].parse::<u32>().unwrap(),
+            orientation: position[2].parse::<Orientation>().unwrap(),
+            instructions: instructions,
+        })
     }
 }
 
@@ -155,5 +179,28 @@ mod tests {
         };
 
         assert_eq!(rover.perform_instructions(), expected_rover)
+    }
+
+    #[test]
+    fn parses_a_valid_rover() {
+        let rover_str = "1 2 N\nLMLMLMLMM";
+        let expected_rover = Rover {
+            x: 1,
+            y: 2,
+            orientation: Orientation::North,
+            instructions: vec![
+                Instruction::Left,
+                Instruction::Move,
+                Instruction::Left,
+                Instruction::Move,
+                Instruction::Left,
+                Instruction::Move,
+                Instruction::Left,
+                Instruction::Move,
+                Instruction::Move,
+            ],
+        };
+
+        assert_eq!(rover_str.parse::<Rover>().unwrap(), expected_rover)
     }
 }

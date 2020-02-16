@@ -1,5 +1,6 @@
-mod rover;
+mod instruction;
 mod orientation;
+mod rover;
 
 use rover::Rover;
 
