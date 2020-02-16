@@ -16,21 +16,35 @@ pub struct Rover {
 }
 
 impl Rover {
-    pub fn turn_left(&self) -> Self {
-        Rover {
+    pub fn perform_instructions(&self) -> Self {
+        self.instructions
+            .iter()
+            .fold(self.clone(), |res, i| res.perform_instruction(i))
+    }
+
+    fn perform_instruction(&self, instruction: &Instruction) -> Self {
+        match instruction {
+            Instruction::Left => self.turn_left(),
+            Instruction::Right => self.turn_right(),
+            Instruction::Move => self.r#move(),
+        }
+    }
+
+    fn turn_left(&self) -> Self {
+        Self {
             orientation: self.orientation.turn_left(),
             ..self.clone()
         }
     }
 
-    pub fn turn_right(&self) -> Self {
-        Rover {
+    fn turn_right(&self) -> Self {
+        Self {
             orientation: self.orientation.turn_right(),
             ..self.clone()
         }
     }
 
-    pub fn r#move(&self) -> Self {
+    fn r#move(&self) -> Self {
         let (new_x, new_y) = match self.orientation {
             Orientation::North => (self.x, self.y + 1),
             Orientation::South => (self.x, self.y - 1),
@@ -38,7 +52,7 @@ impl Rover {
             Orientation::East => (self.x + 1, self.y),
         };
 
-        Rover {
+        Self {
             x: new_x,
             y: new_y,
             ..self.clone()
@@ -52,9 +66,9 @@ mod tests {
 
     fn test_rover() -> Rover {
         Rover {
-            x: 1,
-            y: 2,
-            orientation: Orientation::North,
+            x: 3,
+            y: 3,
+            orientation: Orientation::East,
             instructions: vec![
                 Instruction::Move,
                 Instruction::Move,
@@ -75,7 +89,7 @@ mod tests {
         let rover = test_rover();
         let new_rover = rover.turn_left();
 
-        assert_eq!(new_rover.orientation, Orientation::West)
+        assert_eq!(new_rover.orientation, Orientation::North)
     }
 
     #[test]
@@ -83,15 +97,18 @@ mod tests {
         let rover = test_rover();
         let new_rover = rover.turn_right();
 
-        assert_eq!(new_rover.orientation, Orientation::East)
+        assert_eq!(new_rover.orientation, Orientation::South)
     }
 
     #[test]
     fn moving_north_increases_y() {
-        let rover = test_rover();
+        let rover = Rover {
+            orientation: Orientation::North,
+            ..test_rover()
+        };
         let new_rover = rover.r#move();
 
-        assert_eq!(new_rover.y, 3)
+        assert_eq!(new_rover.y, 4)
     }
 
     #[test]
@@ -102,7 +119,7 @@ mod tests {
         };
         let new_rover = rover.r#move();
 
-        assert_eq!(new_rover.y, 1)
+        assert_eq!(new_rover.y, 2)
     }
 
     #[test]
@@ -113,7 +130,7 @@ mod tests {
         };
         let new_rover = rover.r#move();
 
-        assert_eq!(new_rover.x, 0)
+        assert_eq!(new_rover.x, 2)
     }
 
     #[test]
@@ -124,6 +141,19 @@ mod tests {
         };
         let new_rover = rover.r#move();
 
-        assert_eq!(new_rover.x, 2)
+        assert_eq!(new_rover.x, 4)
+    }
+
+    #[test]
+    fn perform_as_instructed() {
+        let rover = test_rover();
+        let expected_rover = Rover {
+            x: 5,
+            y: 1,
+            orientation: Orientation::East,
+            ..rover.clone()
+        };
+
+        assert_eq!(rover.perform_instructions(), expected_rover)
     }
 }
