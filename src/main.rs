@@ -8,5 +8,5 @@ fn main() {
 LMLMLMLMM
 3 3 E
 MMRMMRMRRM";
-    println!("{}", execute(input));
+    println!("{}", execute(input).unwrap());
 }

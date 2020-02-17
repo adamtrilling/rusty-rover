@@ -23,16 +23,41 @@ impl FromStr for Plateau {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut lines = s.split('\n');
 
-        let plateau_size: Vec<&str> = lines.next().unwrap().split(' ').collect();
+        let plateau_size: Vec<&str> = match lines.next() {
+            None => {
+                return Err(ParsePlateauError {});
+            }
+            Some(sizes) => sizes.split(' ').collect(),
+        };
         let mut rovers = Vec::new();
         while let Some(line) = lines.next() {
-            let rover_str = format!("{}\n{}", line, lines.next().unwrap());
-            rovers.push(rover_str.parse::<Rover>().unwrap());
+            match lines.next() {
+                None => {
+                    return Err(ParsePlateauError {});
+                }
+                Some(second_line) => {
+                    let rover_str = format!("{}\n{}", line, second_line);
+                    match rover_str.parse::<Rover>() {
+                        Ok(rover) => rovers.push(rover),
+                        Err(_) => return Err(ParsePlateauError {}),
+                    }
+                }
+            };
         }
 
+        let h_size = match plateau_size[0].parse::<u32>() {
+            Ok(x) => x,
+            Err(_) => return Err(ParsePlateauError {}),
+        };
+
+        let v_size = match plateau_size[1].parse::<u32>() {
+            Ok(x) => x,
+            Err(_) => return Err(ParsePlateauError {}),
+        };
+
         Ok(Self {
-            h_size: plateau_size[0].parse::<u32>().unwrap(),
-            v_size: plateau_size[1].parse::<u32>().unwrap(),
+            h_size: h_size,
+            v_size: v_size,
             rovers: rovers,
         })
     }
@@ -50,14 +75,18 @@ impl fmt::Display for Plateau {
     }
 }
 
-pub fn execute(input: &str) -> String {
-    let plateau = input.parse::<Plateau>().unwrap();
-    plateau
+pub fn execute(input: &str) -> Result<String, ParsePlateauError> {
+    let plateau = match input.parse::<Plateau>() {
+        Ok(plateau) => plateau,
+        Err(_) => return Err(ParsePlateauError {}),
+    };
+
+    Ok(plateau
         .rovers
         .iter()
         .map(|r| r.perform_instructions().to_string())
         .collect::<Vec<String>>()
-        .join("\n")
+        .join("\n"))
 }
 
 #[cfg(test)]
@@ -74,6 +103,12 @@ MMRMMRMRRM";
         let expected_output = "1 3 N
 5 1 E";
 
-        assert_eq!(execute(input), expected_output)
+        assert_eq!(execute(input).unwrap(), expected_output)
+    }
+
+    #[test]
+    fn it_fails_to_parse_with_blank_input() {
+        let input = "";
+        assert!(input.parse::<Plateau>().is_err())
     }
 }
