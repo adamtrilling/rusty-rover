@@ -1,4 +1,4 @@
-use super::instruction::Instruction;
+use super::instruction::{Instruction, ParseInstructionError};
 use super::orientation::Orientation;
 
 use std::convert::TryFrom;
@@ -72,10 +72,19 @@ impl FromStr for Rover {
         }
 
         let position: Vec<&str> = lines[0].split(' ').collect();
-        let instructions = lines[1]
+        let instructions = match lines[1]
             .chars()
-            .map(|i| Instruction::try_from(i).unwrap())
-            .collect();
+            .try_fold(Vec::new(), |mut acc, i| match Instruction::try_from(i) {
+                Ok(inst) => {
+                    acc.push(inst);
+                    Ok(acc)
+                },
+                Err(_) => Err(ParseRoverError {})
+            }) {
+                Ok(instructions) => instructions,
+                Err(_) => { return Err(ParseRoverError {}) }
+            };
+
         Ok(Rover {
             x: position[0].parse::<u32>().unwrap(),
             y: position[1].parse::<u32>().unwrap(),
@@ -209,5 +218,11 @@ mod tests {
         };
 
         assert_eq!(rover_str.parse::<Rover>().unwrap(), expected_rover)
+    }
+
+    #[test]
+    fn raises_error_when_parsing_invalid_instructions() {
+        let rover_str = "1 2 N\nLMLMLMLNM";
+        assert!(rover_str.parse::<Rover>().is_err())
     }
 }
