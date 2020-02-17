@@ -1,9 +1,9 @@
-use super::instruction::{Instruction, ParseInstructionError};
+use super::instruction::Instruction;
 use super::orientation::Orientation;
 
 use std::convert::TryFrom;
-use std::str::FromStr;
 use std::fmt;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct ParseRoverError {}
@@ -72,23 +72,38 @@ impl FromStr for Rover {
         }
 
         let position: Vec<&str> = lines[0].split(' ').collect();
-        let instructions = match lines[1]
-            .chars()
-            .try_fold(Vec::new(), |mut acc, i| match Instruction::try_from(i) {
+        let instructions = match lines[1].chars().try_fold(Vec::new(), |mut acc, i| {
+            match Instruction::try_from(i) {
                 Ok(inst) => {
                     acc.push(inst);
                     Ok(acc)
-                },
-                Err(_) => Err(ParseRoverError {})
-            }) {
-                Ok(instructions) => instructions,
-                Err(_) => { return Err(ParseRoverError {}) }
-            };
+                }
+                Err(_) => Err(ParseRoverError {}),
+            }
+        }) {
+            Ok(instructions) => instructions,
+            Err(_) => return Err(ParseRoverError {}),
+        };
+
+        let x_pos = match position[0].parse::<u32>() {
+            Ok(x) => x,
+            Err(_) => return Err(ParseRoverError {}),
+        };
+
+        let y_pos = match position[1].parse::<u32>() {
+            Ok(y) => y,
+            Err(_) => return Err(ParseRoverError {}),
+        };
+
+        let orientation = match position[2].parse::<Orientation>() {
+            Ok(orientation) => orientation,
+            Err(_) => return Err(ParseRoverError {}),
+        };
 
         Ok(Rover {
-            x: position[0].parse::<u32>().unwrap(),
-            y: position[1].parse::<u32>().unwrap(),
-            orientation: position[2].parse::<Orientation>().unwrap(),
+            x: x_pos,
+            y: y_pos,
+            orientation: orientation,
             instructions: instructions,
         })
     }
@@ -218,6 +233,24 @@ mod tests {
         };
 
         assert_eq!(rover_str.parse::<Rover>().unwrap(), expected_rover)
+    }
+
+    #[test]
+    fn raises_error_when_parsing_invalid_x_position() {
+        let rover_str = "x 2 N\nLMLMLMLMM";
+        assert!(rover_str.parse::<Rover>().is_err())
+    }
+
+    #[test]
+    fn raises_error_when_parsing_invalid_y_position() {
+        let rover_str = "1 y N\nLMLMLMLMM";
+        assert!(rover_str.parse::<Rover>().is_err())
+    }
+
+    #[test]
+    fn raises_error_when_parsing_invalid_orientation() {
+        let rover_str = "1 2 Z\nLMLMLMLMM";
+        assert!(rover_str.parse::<Rover>().is_err())
     }
 
     #[test]
