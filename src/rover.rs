@@ -8,6 +8,9 @@ use std::str::FromStr;
 #[derive(Debug)]
 pub struct ParseRoverError {}
 
+#[derive(Debug)]
+pub struct OutOfBoundsError {}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Rover {
     x: u32,
@@ -17,17 +20,17 @@ pub struct Rover {
 }
 
 impl Rover {
-    pub fn perform_instructions(&self) -> Self {
+    pub fn perform_instructions(&self) -> Result<Self, OutOfBoundsError> {
         self.instructions
             .iter()
-            .fold(self.clone(), |res, i| res.perform_instruction(i))
+            .try_fold(self.clone(), |res, i| res.perform_instruction(i))
     }
 
-    fn perform_instruction(&self, instruction: &Instruction) -> Self {
+    fn perform_instruction(&self, instruction: &Instruction) -> Result<Self, OutOfBoundsError> {
         match instruction {
-            Instruction::Left => self.turn_left(),
-            Instruction::Right => self.turn_right(),
-            Instruction::Move => self.r#move(),
+            Instruction::Left => Ok(self.turn_left()),
+            Instruction::Right => Ok(self.turn_right()),
+            Instruction::Move => self.try_move(),
         }
     }
 
@@ -45,18 +48,26 @@ impl Rover {
         }
     }
 
-    fn r#move(&self) -> Self {
+    fn try_move(&self) -> Result<Self, OutOfBoundsError> {
         let (new_x, new_y) = match self.orientation {
-            Orientation::North => (self.x, self.y + 1),
-            Orientation::South => (self.x, self.y - 1),
-            Orientation::West => (self.x - 1, self.y),
-            Orientation::East => (self.x + 1, self.y),
+            Orientation::North => (Some(self.x), self.y.checked_add(1)),
+            Orientation::South => (Some(self.x), self.y.checked_sub(1)),
+            Orientation::West => (self.x.checked_sub(1), Some(self.y)),
+            Orientation::East => (self.x.checked_add(1), Some(self.y)),
         };
 
-        Self {
-            x: new_x,
-            y: new_y,
-            ..self.clone()
+        if let Some(x) = new_x {
+            if let Some(y) = new_y {
+                Ok(Self {
+                    x: x,
+                    y: y,
+                    ..self.clone()
+                })
+            } else {
+                Err(OutOfBoundsError {})
+            }
+        } else {
+            Err(OutOfBoundsError {})
         }
     }
 }
@@ -161,7 +172,7 @@ mod tests {
             orientation: Orientation::North,
             ..test_rover()
         };
-        let new_rover = rover.r#move();
+        let new_rover = rover.try_move().unwrap();
 
         assert_eq!(new_rover.y, 4)
     }
@@ -172,7 +183,7 @@ mod tests {
             orientation: Orientation::South,
             ..test_rover()
         };
-        let new_rover = rover.r#move();
+        let new_rover = rover.try_move().unwrap();
 
         assert_eq!(new_rover.y, 2)
     }
@@ -183,7 +194,7 @@ mod tests {
             orientation: Orientation::West,
             ..test_rover()
         };
-        let new_rover = rover.r#move();
+        let new_rover = rover.try_move().unwrap();
 
         assert_eq!(new_rover.x, 2)
     }
@@ -194,7 +205,7 @@ mod tests {
             orientation: Orientation::East,
             ..test_rover()
         };
-        let new_rover = rover.r#move();
+        let new_rover = rover.try_move().unwrap();
 
         assert_eq!(new_rover.x, 4)
     }
@@ -209,7 +220,28 @@ mod tests {
             ..rover.clone()
         };
 
-        assert_eq!(rover.perform_instructions(), expected_rover)
+        assert_eq!(rover.perform_instructions().unwrap(), expected_rover)
+    }
+
+    #[test]
+    fn raise_error_when_moving_below_zero() {
+        let rover = Rover {
+            x: 0,
+            orientation: Orientation::West,
+            ..test_rover()
+        };
+
+        assert!(rover.perform_instruction(&Instruction::Move).is_err())
+    }
+
+    #[test]
+    fn raise_error_when_moving_past_the_edge() {
+        let rover = Rover {
+            x: 5,
+            ..test_rover()
+        };
+
+        assert!(rover.perform_instruction(&Instruction::Move).is_err())
     }
 
     #[test]

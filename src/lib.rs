@@ -11,12 +11,19 @@ pub fn execute(input: &str) -> Result<String, ParsePlateauError> {
         Err(_) => return Err(ParsePlateauError {}),
     };
 
-    Ok(plateau
-        .rovers()
-        .iter()
-        .map(|r| r.perform_instructions().to_string())
-        .collect::<Vec<String>>()
-        .join("\n"))
+    let maybe_outputs =
+        plateau
+            .rovers()
+            .iter()
+            .try_fold("".to_string(), |res, r| match r.perform_instructions() {
+                Ok(new_rover) => Ok(format!("{}\n{}", res, new_rover.to_string())),
+                Err(_) => Err(ParsePlateauError {}),
+            });
+
+    match maybe_outputs {
+        Ok(outputs) => Ok(outputs.trim_start().to_string()),
+        Err(err) => Err(err),
+    }
 }
 
 #[cfg(test)]
