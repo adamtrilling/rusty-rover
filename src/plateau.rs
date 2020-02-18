@@ -8,8 +8,8 @@ pub struct ParsePlateauError {}
 
 #[derive(Debug, PartialEq)]
 pub struct Plateau {
-    h_size: u32,
-    v_size: u32,
+    pub h_size: u32,
+    pub v_size: u32,
     rovers: Vec<Rover>,
 }
 

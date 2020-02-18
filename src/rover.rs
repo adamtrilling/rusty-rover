@@ -20,17 +20,22 @@ pub struct Rover {
 }
 
 impl Rover {
-    pub fn perform_instructions(&self) -> Result<Self, OutOfBoundsError> {
-        self.instructions
-            .iter()
-            .try_fold(self.clone(), |res, i| res.perform_instruction(i))
+    pub fn perform_instructions(&self, x_max: u32, y_max: u32) -> Result<Self, OutOfBoundsError> {
+        self.instructions.iter().try_fold(self.clone(), |res, i| {
+            res.perform_instruction(i, x_max, y_max)
+        })
     }
 
-    fn perform_instruction(&self, instruction: &Instruction) -> Result<Self, OutOfBoundsError> {
+    fn perform_instruction(
+        &self,
+        instruction: &Instruction,
+        x_max: u32,
+        y_max: u32,
+    ) -> Result<Self, OutOfBoundsError> {
         match instruction {
             Instruction::Left => Ok(self.turn_left()),
             Instruction::Right => Ok(self.turn_right()),
-            Instruction::Move => self.try_move(),
+            Instruction::Move => self.try_move(x_max, y_max),
         }
     }
 
@@ -48,7 +53,7 @@ impl Rover {
         }
     }
 
-    fn try_move(&self) -> Result<Self, OutOfBoundsError> {
+    fn try_move(&self, x_max: u32, y_max: u32) -> Result<Self, OutOfBoundsError> {
         let (new_x, new_y) = match self.orientation {
             Orientation::North => (Some(self.x), self.y.checked_add(1)),
             Orientation::South => (Some(self.x), self.y.checked_sub(1)),
@@ -58,11 +63,16 @@ impl Rover {
 
         if let Some(x) = new_x {
             if let Some(y) = new_y {
-                Ok(Self {
-                    x: x,
-                    y: y,
-                    ..self.clone()
-                })
+                if x <= x_max && y <= y_max {
+                    Ok(Self {
+                        x: x,
+                        y: y,
+                        ..self.clone()
+                    })
+                }
+                else {
+                    Err(OutOfBoundsError {})
+                }
             } else {
                 Err(OutOfBoundsError {})
             }
@@ -172,7 +182,7 @@ mod tests {
             orientation: Orientation::North,
             ..test_rover()
         };
-        let new_rover = rover.try_move().unwrap();
+        let new_rover = rover.try_move(20, 20).unwrap();
 
         assert_eq!(new_rover.y, 4)
     }
@@ -183,7 +193,7 @@ mod tests {
             orientation: Orientation::South,
             ..test_rover()
         };
-        let new_rover = rover.try_move().unwrap();
+        let new_rover = rover.try_move(20, 20).unwrap();
 
         assert_eq!(new_rover.y, 2)
     }
@@ -194,7 +204,7 @@ mod tests {
             orientation: Orientation::West,
             ..test_rover()
         };
-        let new_rover = rover.try_move().unwrap();
+        let new_rover = rover.try_move(20, 20).unwrap();
 
         assert_eq!(new_rover.x, 2)
     }
@@ -205,7 +215,7 @@ mod tests {
             orientation: Orientation::East,
             ..test_rover()
         };
-        let new_rover = rover.try_move().unwrap();
+        let new_rover = rover.try_move(20, 20).unwrap();
 
         assert_eq!(new_rover.x, 4)
     }
@@ -220,7 +230,7 @@ mod tests {
             ..rover.clone()
         };
 
-        assert_eq!(rover.perform_instructions().unwrap(), expected_rover)
+        assert_eq!(rover.perform_instructions(20, 20).unwrap(), expected_rover)
     }
 
     #[test]
@@ -231,7 +241,7 @@ mod tests {
             ..test_rover()
         };
 
-        assert!(rover.perform_instruction(&Instruction::Move).is_err())
+        assert!(rover.perform_instruction(&Instruction::Move, 20, 20).is_err())
     }
 
     #[test]
@@ -241,7 +251,7 @@ mod tests {
             ..test_rover()
         };
 
-        assert!(rover.perform_instruction(&Instruction::Move).is_err())
+        assert!(rover.perform_instruction(&Instruction::Move, 5, 5).is_err())
     }
 
     #[test]

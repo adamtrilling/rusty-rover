@@ -11,14 +11,12 @@ pub fn execute(input: &str) -> Result<String, ParsePlateauError> {
         Err(_) => return Err(ParsePlateauError {}),
     };
 
-    let maybe_outputs =
-        plateau
-            .rovers()
-            .iter()
-            .try_fold("".to_string(), |res, r| match r.perform_instructions() {
-                Ok(new_rover) => Ok(format!("{}\n{}", res, new_rover.to_string())),
-                Err(_) => Err(ParsePlateauError {}),
-            });
+    let maybe_outputs = plateau.rovers().iter().try_fold("".to_string(), |res, r| {
+        match r.perform_instructions(plateau.h_size, plateau.v_size) {
+            Ok(new_rover) => Ok(format!("{}\n{}", res, new_rover.to_string())),
+            Err(_) => Err(ParsePlateauError {}),
+        }
+    });
 
     match maybe_outputs {
         Ok(outputs) => Ok(outputs.trim_start().to_string()),
